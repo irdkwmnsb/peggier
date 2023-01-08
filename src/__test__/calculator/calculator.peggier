@@ -1,0 +1,27 @@
+expression = term expression';
+expression' = PLUS term expression'
+            / MINUS term expression'
+            /;
+term = factor term';
+term' = MUL factor term'
+      /;
+factor = NUMBER
+       / MINUS factor
+       / LPAREN expression RPAREN
+       / FUNCTION_NAME LPAREN arguments RPAREN;
+arguments = expression varargs
+          /;
+varargs =
+    COMMA expression varargs
+    /;
+
+NUMBER = /\d+/;
+FUNCTION_NAME = /[a-z]+/;
+COMMA = ",";
+MINUS = "-";
+MUL = "*";
+PLUS = "+";
+LPAREN = "(";
+RPAREN = ")";
+
+

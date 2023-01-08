@@ -1,0 +1,22 @@
+{
+  "compilerOptions": {
+    "allowSyntheticDefaultImports": true,
+    "esModuleInterop": true,
+    "noImplicitAny": true,
+    "module": "es2022",
+    "target": "es2022",
+    "allowJs": true,
+    "lib": ["es2022"],
+    "types": ["node", "jest"],
+    "moduleResolution": "node",
+    "baseUrl": "./",
+    "paths": {
+      "@peggier/*": ["./src/*"]
+    },
+    "outDir": "dist"
+  },
+  "include": ["./src/**/*"],
+  "ts-node": {
+    "require": ["tsconfig-paths/register"]
+  }
+}
