@@ -1,19 +1,22 @@
+!start expression;
+!name "calculator";
+
 expression = term expression';
 expression' = PLUS term expression'
             / MINUS term expression'
-            /;
+            / EPS;
 term = factor term';
 term' = MUL factor term'
-      /;
+      / EPS;
 factor = NUMBER
        / MINUS factor
        / LPAREN expression RPAREN
        / FUNCTION_NAME LPAREN arguments RPAREN;
 arguments = expression varargs
-          /;
+          / EPS;
 varargs =
     COMMA expression varargs
-    /;
+    / EPS;
 
 NUMBER = /\d+/;
 FUNCTION_NAME = /[a-z]+/;

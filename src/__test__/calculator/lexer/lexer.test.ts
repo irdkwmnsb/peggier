@@ -1,8 +1,8 @@
 import { parse, generateLexer } from '@peggier/core';
 import fs from 'fs';
-import {dynamicImport} from 'tsimportlib';
 
 describe('Calculator lexer tests', () => {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let lexer: any = null;
   beforeAll(async () => {
     const grammar = await fs.promises.readFile(

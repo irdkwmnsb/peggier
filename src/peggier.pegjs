@@ -1,10 +1,22 @@
 {{
 /* eslint-disable */
 import { StringTerminal, RegexpTerminal } from "@peggier/terminal";
-import { TerminalToken, Rule, NonterminalToken } from "@peggier/token";
+import { TerminalToken, Rule, EpsilonRule, NonterminalToken } from "@peggier/token";
 import { Grammar } from "@peggier/grammar";
 }}
-grammar = rules: (rule*) { return new Grammar(rules); }
+peggier = options: header _ grammar: grammar { return new Grammar(grammar, options) }
+
+header = properties: ((@headerProperty _) *) {
+    return properties.reduce((acc: any, prop: any) => {
+        return {...acc, ...prop}
+    }, {});
+}
+headerProperty = @(@headerStart / @headerName) _ ";"
+headerStart = "!start" _ start: nontermName { return { start: start } }
+headerName = "!name" _ name: stringLiteral { return { name: name } }
+
+
+grammar = @(rule*)
 
 rule = @(termRule / nontermRule) ";" _
 
@@ -13,8 +25,12 @@ nontermRule = name: nontermName _ "=" _ rules: ruleExpr {
     return new NonterminalToken(name, rules);
 }
 nontermName = [a-z][A-Za-z0-9_']* { return text(); }
-ruleExpr = @ruleTerm _ ("/" _ @ruleTerm)*
-ruleTerm = terms: ((@termName / @nontermName) _ )* {
+ruleExpr = first: ruleTerm _ rest: ("/" _ @ruleTerm)* {
+    return [first, ...rest];
+}
+
+ruleTerm = "EPS" _ { return new EpsilonRule(); } /
+terms: (@(@termName / @nontermName) _ )+ {
     return new Rule(terms);
 }
 
@@ -23,9 +39,12 @@ termRule = name: termName _ "=" _ literal: termLiteral {
     return new TerminalToken(name, literal);
 }
 termName = [A-Z][A-Za-z0-9_']* { return text(); }
-termLiteral = stringLiteral / regexLiteral
-stringLiteral = "\"" val:([^"] / "\\\"")+ "\"" { return new StringTerminal(val.join("").replace('\\"', '"')); }
-regexLiteral = "/" val:([^/] / "\\/")+ "/" { return new RegexpTerminal(new RegExp(val.join("").replace("\\/", "/"))); }
+termLiteral = stringTerm / regexpTerm
+stringTerm = str: stringLiteral { return new StringTerminal(str) }
+regexpTerm = regex: regexLiteral { return new RegexpTerminal(regex) }
+
+stringLiteral = "\"" val:([^"] / "\\\"")+ "\"" { return val.join("").replace('\\"', '"'); }
+regexLiteral = "/" val:([^/] / "\\/")+ "/" { return new RegExp(val.join("").replace("\\/", "/")); }
 
 
 _  = [ \t\r\n]*

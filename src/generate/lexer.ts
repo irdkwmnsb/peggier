@@ -41,8 +41,7 @@ export class Lexer {
 `;
 
 export const generateLexer = (grammar: Grammar): string => {
-  const tokens = grammar.tokens
-    .filter((token) => token instanceof TerminalToken)
+  const tokens = grammar.terminalTokens
     .map(
       (token: TerminalToken) =>
         `["${token.name}", ${
