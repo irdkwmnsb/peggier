@@ -35,11 +35,12 @@ terms: (@(@termName / @nontermName) _ )+ {
 }
 
 // terminals
-termRule = name: termName _ "=" _ literal: termLiteral {
-    return new TerminalToken(name, literal);
+termRule = name: termName _ "=" _ literal: termLiteral _ action: termAction?  {
+    return new TerminalToken(name, literal, action);
 }
 termName = [A-Z][A-Za-z0-9_']* { return text(); }
 termLiteral = stringTerm / regexpTerm
+termAction = "{" _ "TAKE" _ "}" { return "TAKE" } / "{" _ "SKIP" _ "}" { return "SKIP" }
 stringTerm = str: stringLiteral { return new StringTerminal(str) }
 regexpTerm = regex: regexLiteral { return new RegexpTerminal(regex) }
 

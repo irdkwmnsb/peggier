@@ -1,31 +1,26 @@
 import { parse, generateLexer } from '@peggier/core';
 import fs from 'fs';
+import { generateLexerFile } from '../generate';
 
 describe('Calculator lexer tests', () => {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let lexer: any = null;
   beforeAll(async () => {
-    const grammar = await fs.promises.readFile(
-      'src/__test__/calculator/calculator.peggier',
-      { encoding: 'utf-8' },
-    );
-    const result = parse(grammar);
-    const lexerSource = generateLexer(result);
-    await fs.promises.writeFile('src/__test__/calculator/lexer/lexer.ts', lexerSource);
+    await generateLexerFile('src/__test__/calculator/lexer/lexer.ts');
     const { Lexer } = await require('./lexer');
     lexer = new Lexer();
   });
 
   test('Lexer should tokenize numbers', () => {
-    expect(lexer.tokenize('123')).toEqual([['NUMBER', '123']]);
+    expect(lexer.tokenize('123')).toEqual([['NUMBER', '123'], ['EOF', '']]);
   });
 
   test('Lexer should tokenize operators', () => {
-    expect(lexer.tokenize('+')).toEqual([['PLUS', '+']]);
+    expect(lexer.tokenize('+')).toEqual([['PLUS', '+'], ['EOF', '']]);
   });
 
   test('Lexer should tokenize functions', () => {
-    expect(lexer.tokenize('sin')).toEqual([['FUNCTION_NAME', 'sin']]);
+    expect(lexer.tokenize('sin')).toEqual([['FUNCTION_NAME', 'sin'], ['EOF', '']]);
   });
 
   test('Lexer should tokenize function calls', () => {
@@ -34,6 +29,7 @@ describe('Calculator lexer tests', () => {
       ['LPAREN', '('],
       ['NUMBER', '1'],
       ['RPAREN', ')'],
+      ['EOF', ''],
     ]);
   });
   test('Lexer should throw on unexpected character', () => {

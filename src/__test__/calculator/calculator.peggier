@@ -26,5 +26,6 @@ MUL = "*";
 PLUS = "+";
 LPAREN = "(";
 RPAREN = ")";
+WS = /\s+/ {SKIP};
 
 

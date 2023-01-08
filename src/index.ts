@@ -1,7 +1,7 @@
 import { Command } from 'commander';
 import fs from 'fs';
 import util from 'util';
-import { generateLexer, parse } from '@peggier/core';
+import { generateParser, parse } from '@peggier/core';
 import { PeggySyntaxError } from "@peggier/parser";
 const program = new Command();
 
@@ -15,10 +15,13 @@ program.command('generate <path>').action(async (path: string) => {
     console.log(util.inspect(result, { depth: null, colors: true }));
     // const lexer = generateLexer(result);
     // console.log(lexer);
-    console.log("First sets:");
-    console.log(result.firstSets);
-    console.log("Follow sets:");
-    console.log(result.followSets);
+    // console.log("First sets:");
+    // console.log(result.firstSets);
+    // console.log("Follow sets:");
+    // console.log(result.followSets);
+    console.log("Generated parser");
+    const parser = generateParser(result);
+    console.log(parser);
   } catch (e) {
     if(e instanceof PeggySyntaxError) {
       console.error(e);

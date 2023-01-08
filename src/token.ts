@@ -2,16 +2,20 @@ import { Terminal } from "@peggier/terminal";
 
 export type TokenRef = string;
 
+export type TerminalTokenAction = "TAKE" | "SKIP";
+
 export class Token {
   name: string;
 }
 
 export class TerminalToken extends Token {
   terminal: Terminal;
-  constructor(name: string, terminal: Terminal) {
+  action?: TerminalTokenAction;
+  constructor(name: string, terminal: Terminal, action?: TerminalTokenAction) {
     super();
     this.name = name;
     this.terminal = terminal;
+    this.action = action;
   }
 }
 
