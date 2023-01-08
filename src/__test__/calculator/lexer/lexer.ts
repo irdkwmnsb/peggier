@@ -1,8 +1,8 @@
 
-type Token = [string, RegExp | string];
-
+type TokenDecl = [string, RegExp | string];
+export type Token = [string, string];
 export class Lexer {
-  private tokens: Token[] = [
+  private tokens: TokenDecl[] = [
     ["NUMBER", /\d+/],
     ["FUNCTION_NAME", /[a-z]+/],
     ["COMMA", ","],

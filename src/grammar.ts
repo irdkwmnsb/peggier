@@ -7,14 +7,17 @@ import {
   Rule,
 } from '@peggier/token';
 
-type TokenSets = { [key: string]: Set<string> };
+type TokenSets = { [key: string]: Record<string, number> };
 
-const setAddAllIsChanged = <T>(set: Set<T>, value: T[]): boolean => {
-  const size = set.size;
-  for (const item of value) {
-    set.add(item);
+const setAllIsChanged = <K extends string | number | symbol, V>(obj: Record<K, V>, newVals: Record<K, V>): boolean => {
+  let changed = false;
+  for (const key in obj) {
+    if (obj[key] !== newVals[key]) {
+      changed = true;
+      obj[key] = newVals[key];
+    }
   }
-  return size !== set.size;
+  return changed;
 };
 
 const setMinus = <T>(set1: Set<T>, set2: Set<T>): Set<T> => {
@@ -80,11 +83,11 @@ export class Grammar {
         hasNonEps = true;
         break;
       } else {
-        const first = setMinus(firstSets[ref], new Set(['EPS']));
-        for (const name of first) {
+        const {EPS: _, ...first} = firstSets[ref];
+        for (const name of Object.keys(first)) {
           result.add(name);
         }
-        if (!firstSets[ref].has('EPS')) {
+        if ("EPS" in firstSets[ref]) {
           hasNonEps = true;
           break;
         }
@@ -100,17 +103,20 @@ export class Grammar {
     // Generate FIRST sets
     const firstSets: TokenSets = {};
     for (const token of this.nonterminalTokens) {
-      firstSets[token.name] = new Set();
+      firstSets[token.name] = {};
     }
     let changed = true;
     while (changed) {
       changed = false;
       for (const token of this.nonterminalTokens) {
-        for (const rule of token.rules) {
-          changed ||= setAddAllIsChanged(
-            firstSets[token.name],
-            [...this.first(rule.tokenRefs, firstSets)],
-          );
+        for (const [ruleIndex, rule] of token.rules.entries()) {
+          const followRules = this.first(rule.tokenRefs, firstSets)
+          for (const name of followRules) {
+            if (!(name in firstSets[token.name])) {
+              firstSets[token.name][name] = ruleIndex;
+              changed = true;
+            }
+          }
         }
       }
     }
@@ -126,28 +132,34 @@ export class Grammar {
   calculateFollow(): TokenSets {
     const followSets: TokenSets = {};
     for (const token of this.nonterminalTokens) {
-      followSets[token.name] = new Set();
+      followSets[token.name] = {};
     }
-    followSets[this._start].add('$');
+    followSets[this._start]['$'] = -1;
     let changed = true;
     while (changed) {
       changed = false;
       for (const token of this.nonterminalTokens) {
-        for (const rule of token.rules) {
+        for (const [ruleIndex, rule] of token.rules.entries()) {
           for (let i = 0; i < rule.tokenRefs.length; i++) {
             const ref = rule.tokenRefs[i];
             if (this.isTerminal(ref)) {
               continue;
             }
             const first  = this.first(rule.tokenRefs.slice(i + 1), this.firstSets)
-            changed ||= setAddAllIsChanged(
+            changed ||= setAllIsChanged(
               followSets[ref],
-              [...setMinus(first, new Set(['EPS']))],
+              [...setMinus(first, new Set(['EPS']))].reduce(
+                (acc, name) => ({...acc, [name]: ruleIndex}),
+                {},
+              ),
             );
             if (first.has('EPS')) {
-              changed ||= setAddAllIsChanged(
+              changed ||= setAllIsChanged(
                 followSets[ref],
-                [...followSets[token.name]],
+                Object.keys(followSets[token.name]).reduce(
+                  (acc, [name, index]) => ({...acc, [name]: index}),
+                  {},
+                ),
               );
             }
           }

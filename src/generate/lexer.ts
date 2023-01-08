@@ -2,10 +2,10 @@ import { TerminalToken } from '@peggier/token';
 import { Grammar } from '@peggier/grammar';
 
 const makeCode = (tokens: string): string => `
-type Token = [string, RegExp | string];
-
+type TokenDecl = [string, RegExp | string];
+export type Token = [string, string];
 export class Lexer {
-  private tokens: Token[] = [
+  private tokens: TokenDecl[] = [
     ${tokens}
   ]
   tokenize(input: string): Token[] {
