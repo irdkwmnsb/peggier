@@ -1,7 +1,7 @@
 {{
 /* eslint-disable */
 import { StringTerminal, RegexpTerminal } from "@peggier/terminal";
-import { TerminalToken, Rule, EpsilonRule, NonterminalToken } from "@peggier/token";
+import { TerminalToken, Rule, EpsilonRule, NonterminalToken, BindedTokenRef, EOFTokenRef } from "@peggier/token";
 import { Grammar } from "@peggier/grammar";
 }}
 peggier = options: header _ grammar: grammar { return new Grammar(grammar, options) }
@@ -25,14 +25,28 @@ nontermRule = name: nontermName _ "=" _ rules: ruleExpr {
     return new NonterminalToken(name, rules);
 }
 nontermName = [a-z][A-Za-z0-9_']* { return text(); }
-ruleExpr = first: ruleTerm _ rest: ("/" _ @ruleTerm)* {
+ruleExpr = first: ruleTerm _ rest: ("/" _ @ruleTerm _)* {
     return [first, ...rest];
 }
 
-ruleTerm = "EPS" _ { return new EpsilonRule(); } /
-terms: (@(@termName / @nontermName) _ )+ {
-    return new Rule(terms);
+ruleTerm =
+"EPS" _ action: ruleAction? _ { return new EpsilonRule(action); }
+/
+terms: (label: (@propName _ ":")? _ termRef: (@termName / @nontermName) _ {
+    if(termRef === "EOF") {
+        return new EOFTokenRef();
+    }
+    return new BindedTokenRef(termRef, label)
+})+ _ action: ruleAction? {
+    return new Rule(terms, action);
 }
+
+ruleAction = "{" @code "}"
+code = codeText ("{" codeText code codeText "}" codeText code codeText)? { return text(); }
+codeText = [^{}]* { return text(); }
+
+propName = // Valid javascript identifier
+    [a-zA-Z][a-zA-Z0-9_$]* { return text(); }
 
 // terminals
 termRule = name: termName _ "=" _ literal: termLiteral _ action: termAction?  {

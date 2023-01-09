@@ -1,8 +1,20 @@
 import { Grammar, TokenSetRules } from '@peggier/grammar';
-import { NonterminalToken } from '@peggier/token';
+import { BindedTokenRef, NonterminalToken, Rule, Token } from '@peggier/token';
 import util from 'util';
 
-const makeParser = (firstSets: TokenSetRules, tokensCode: string[], start: string) => `
+const ident = (code: string): string => {
+  return code
+    .split('\n')
+    .map((line) => '  ' + line)
+    .join('\n');
+};
+
+const makeParser = (
+  firstSets: TokenSetRules,
+  tokensCode: string[],
+  actionsCode: string[],
+  start: string,
+) => `
 import { Lexer, Token } from "./lexer";
 
 export class ParseError extends Error {
@@ -26,7 +38,7 @@ export class Parser {
 
   private startParse(input: string): any {
     this.tokens = new Lexer().tokenize(input);
-    this["parse$${start}"]();
+    return this["parse$${start}"]();
   }
 
   public static parse(input: string): any {
@@ -43,7 +55,18 @@ export class Parser {
     }
   }
 
-  ${tokensCode.map((code) => code.split('\n').join('\n  ')).join('\n\n  ')}
+  private readToken(type: string): string {
+    this.expectOneOf([type]);
+    const token = this.curToken[1];
+    this.nextToken();
+    return token;
+  }
+
+  // Actions
+${actionsCode.map((code) => ident(code)).join('\n\n')}
+
+  // Tokens
+${tokensCode.map((code) => ident(code)).join('\n\n')}
 }
 `;
 
@@ -56,25 +79,38 @@ const makeTokenCode = (
   let rulesSwitch = '';
   for (const [ruleIndex, rule] of token.rules.entries()) {
     rulesSwitch += `
-    // Rule ${ruleIndex}`;
+    // Rule ${ruleIndex}
+    `;
     for (const [termName, termRuleIndex] of Object.entries(firstSetForToken)) {
       if (termRuleIndex === ruleIndex) {
-        rulesSwitch += `
-    case "${termName}":`;
+        if(termName === "EPS") {
+          rulesSwitch += `default:
+    `
+        } else {
+          rulesSwitch += `case "${termName}":
+    `;
+        }
       }
     }
+    rulesSwitch += "  ";
     for (const tokenRef of rule.tokenRefs) {
+      if (tokenRef instanceof BindedTokenRef && tokenRef.label) {
+        rulesSwitch += `parsedResults[${JSON.stringify(tokenRef.label)}] = `;
+      }
       if (grammar.isTerminal(tokenRef)) {
-        rulesSwitch += `
-      this.expectOneOf(${JSON.stringify([tokenRef])});
-      this.nextToken();`;
+        rulesSwitch += `this.readToken(${JSON.stringify(tokenRef.ref)});
+      `;
       } else {
-        rulesSwitch += `
-      this["parse$${tokenRef}"]();`;
+        rulesSwitch += `this["parse$${tokenRef.ref}"]();
+      `;
       }
     }
-    rulesSwitch += `
-      return;`;
+    if(rule.action) {
+      const argumentsForAction = extractNames(rule).map((tokenRef) => `parsedResults[${JSON.stringify(tokenRef)}]`).join(", ");
+      rulesSwitch += `return this["action$${token.name}$${ruleIndex}"](${argumentsForAction});`;
+    } else {
+      rulesSwitch += `return parsedResults;`;
+    }
   }
   return (
     `private ["parse$${token.name}"](): any {` +
@@ -84,12 +120,34 @@ const makeTokenCode = (
       : `
   this.expectOneOf(${JSON.stringify(Object.keys(firstSet[token.name]))});`) +
     `
+  const parsedResults: Record<string, any> = {};
   switch (this.curToken[0]) {` +
     rulesSwitch +
     `
-    }
-  }`
+  }
+}`
   );
+};
+
+const extractNames = (rule: Rule): string[] => (rule.tokenRefs
+  .filter((tokenRef) => tokenRef instanceof BindedTokenRef) as BindedTokenRef[])
+  .map((tokenRef) => tokenRef.label)
+  .filter((tokenRef) => tokenRef !== null)
+
+const makeActionsCode = (token: NonterminalToken): string => {
+  let result = `// Actions for ${token.name}`;
+  for (const [ruleIndex, rule] of token.rules.entries()) {
+    const code = rule.action;
+    const usedNames = extractNames(rule)
+      .map((tokenRef) => tokenRef + ": any");
+    if (code) {
+      result += `
+private ["action$${token.name}$${ruleIndex}"](${usedNames.join(", ")}): any {
+${ident(code.replaceAll(/^\n*/g, "").replaceAll(/\n*$/g, ""))}
+}`;
+    }
+  }
+  return result;
 };
 
 export const generateParser = (grammar: Grammar): string => {
@@ -97,5 +155,10 @@ export const generateParser = (grammar: Grammar): string => {
   const tokensCode = grammar.nonterminalTokens.map((token) =>
     makeTokenCode(token, firstSets, grammar),
   );
-  return makeParser(firstSets, tokensCode, grammar.start);
+
+  const actionsCode = grammar.nonterminalTokens.map(
+    makeActionsCode,
+  ) as string[];
+
+  return makeParser(firstSets, tokensCode, actionsCode, grammar.startRef);
 };

@@ -27,7 +27,7 @@ export class Parser {
 
   private startParse(input: string): any {
     this.tokens = new Lexer().tokenize(input);
-    this["parse$expression"]();
+    return this["parse$expression"]();
   }
 
   public static parse(input: string): any {
@@ -44,8 +44,32 @@ export class Parser {
     }
   }
 
+  private readToken(type: string): string {
+    this.expectOneOf([type]);
+    const token = this.curToken[1];
+    this.nextToken();
+    return token;
+  }
+
+  // Actions
+  // Actions for expression
+
+  // Actions for expression'
+
+  // Actions for term
+
+  // Actions for term'
+
+  // Actions for factor
+
+  // Actions for arguments
+
+  // Actions for varargs
+
+  // Tokens
   private ["parse$expression"](): any {
     this.expectOneOf(["NUMBER","MINUS","LPAREN","FUNCTION_NAME"]);
+    const parsedResults: Record<string, any> = {};
     switch (this.curToken[0]) {
       // Rule 0
       case "NUMBER":
@@ -54,35 +78,35 @@ export class Parser {
       case "FUNCTION_NAME":
         this["parse$term"]();
         this["parse$expression'"]();
-        return;
-      }
+        return parsedResults;
     }
+  }
 
   private ["parse$expression'"](): any {
     // No expectOneOf because of EPS
+    const parsedResults: Record<string, any> = {};
     switch (this.curToken[0]) {
       // Rule 0
       case "PLUS":
-        this.expectOneOf(["PLUS"]);
-        this.nextToken();
+        this.readToken("PLUS");
         this["parse$term"]();
         this["parse$expression'"]();
-        return;
+        return parsedResults;
       // Rule 1
       case "MINUS":
-        this.expectOneOf(["MINUS"]);
-        this.nextToken();
+        this.readToken("MINUS");
         this["parse$term"]();
         this["parse$expression'"]();
-        return;
+        return parsedResults;
       // Rule 2
-      case "EPS":
-        return;
-      }
+      default:
+        return parsedResults;
     }
+  }
 
   private ["parse$term"](): any {
     this.expectOneOf(["NUMBER","MINUS","LPAREN","FUNCTION_NAME"]);
+    const parsedResults: Record<string, any> = {};
     switch (this.curToken[0]) {
       // Rule 0
       case "NUMBER":
@@ -91,63 +115,58 @@ export class Parser {
       case "FUNCTION_NAME":
         this["parse$factor"]();
         this["parse$term'"]();
-        return;
-      }
+        return parsedResults;
     }
+  }
 
   private ["parse$term'"](): any {
     // No expectOneOf because of EPS
+    const parsedResults: Record<string, any> = {};
     switch (this.curToken[0]) {
       // Rule 0
       case "MUL":
-        this.expectOneOf(["MUL"]);
-        this.nextToken();
+        this.readToken("MUL");
         this["parse$factor"]();
         this["parse$term'"]();
-        return;
+        return parsedResults;
       // Rule 1
-      case "EPS":
-        return;
-      }
+      default:
+        return parsedResults;
     }
+  }
 
   private ["parse$factor"](): any {
     this.expectOneOf(["NUMBER","MINUS","LPAREN","FUNCTION_NAME"]);
+    const parsedResults: Record<string, any> = {};
     switch (this.curToken[0]) {
       // Rule 0
       case "NUMBER":
-        this.expectOneOf(["NUMBER"]);
-        this.nextToken();
-        return;
+        this.readToken("NUMBER");
+        return parsedResults;
       // Rule 1
       case "MINUS":
-        this.expectOneOf(["MINUS"]);
-        this.nextToken();
+        this.readToken("MINUS");
         this["parse$factor"]();
-        return;
+        return parsedResults;
       // Rule 2
       case "LPAREN":
-        this.expectOneOf(["LPAREN"]);
-        this.nextToken();
+        this.readToken("LPAREN");
         this["parse$expression"]();
-        this.expectOneOf(["RPAREN"]);
-        this.nextToken();
-        return;
+        this.readToken("RPAREN");
+        return parsedResults;
       // Rule 3
       case "FUNCTION_NAME":
-        this.expectOneOf(["FUNCTION_NAME"]);
-        this.nextToken();
-        this.expectOneOf(["LPAREN"]);
-        this.nextToken();
+        this.readToken("FUNCTION_NAME");
+        this.readToken("LPAREN");
         this["parse$arguments"]();
-        this.expectOneOf(["RPAREN"]);
-        this.nextToken();
-        return;
-      }
+        this.readToken("RPAREN");
+        return parsedResults;
     }
+  }
 
   private ["parse$arguments"](): any {
     // No expectOneOf because of EPS
+    const parsedResults: Record<string, any> = {};
     switch (this.curToken[0]) {
       // Rule 0
       case "NUMBER":
@@ -156,26 +175,26 @@ export class Parser {
       case "FUNCTION_NAME":
         this["parse$expression"]();
         this["parse$varargs"]();
-        return;
+        return parsedResults;
       // Rule 1
-      case "EPS":
-        return;
-      }
+      default:
+        return parsedResults;
     }
+  }
 
   private ["parse$varargs"](): any {
     // No expectOneOf because of EPS
+    const parsedResults: Record<string, any> = {};
     switch (this.curToken[0]) {
       // Rule 0
       case "COMMA":
-        this.expectOneOf(["COMMA"]);
-        this.nextToken();
+        this.readToken("COMMA");
         this["parse$expression"]();
         this["parse$varargs"]();
-        return;
+        return parsedResults;
       // Rule 1
-      case "EPS":
-        return;
-      }
+      default:
+        return parsedResults;
     }
+  }
 }

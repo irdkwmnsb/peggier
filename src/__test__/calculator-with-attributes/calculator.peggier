@@ -1,0 +1,76 @@
+!start expressionStart;
+!name "calculator";
+
+expressionStart = res:expression EOF {
+  return res;
+};
+
+expression = left: term rest: expression' {
+  return rest.op(left, rest.right)
+};
+
+expression' =
+PLUS left:term rest:expression' {
+  return {
+    op: (a: number, b: number) => { return a + b },
+    right: rest.op(left, rest.right)
+  }
+} /
+MINUS left:term rest:expression' {
+  return {
+    op: (a: number, b: number) => { return a - b },
+    right: rest.op(left, rest.right)
+  }
+} / EPS {
+  return {
+    op: (a: number) => { return a },
+  }
+};
+
+term =
+left:factor rest:term' {
+  return rest.op(left, rest.right)
+};
+
+term' =
+MUL left:factor rest:term' {
+  return {
+    op: (a: number, b: number) => { return a * b },
+    right: rest.op(left, rest.right)
+  }
+} /
+EPS {
+  return {
+    op: (a: number) => { return a },
+  }
+};
+
+factor = num: NUMBER { return parseInt(num); }
+    / MINUS num:factor { return -num; }
+    / LPAREN expr:expression RPAREN { return expr }
+    / f:FUNCTION_NAME LPAREN args:arguments RPAREN { return (Math as any)[f].apply(null, args); };
+arguments = first:expression rest:varargs {
+  return [first].concat(rest);
+} /
+EPS {
+  return [];
+};
+varargs =
+COMMA first: expression rest: varargs {
+  return [first].concat(rest);
+} /
+EPS {
+  return [];
+};
+
+NUMBER = /\d+/;
+FUNCTION_NAME = /[a-z]+/;
+COMMA = ",";
+MINUS = "-";
+MUL = "*";
+PLUS = "+";
+LPAREN = "(";
+RPAREN = ")";
+WS = /\s+/ {SKIP};
+
+

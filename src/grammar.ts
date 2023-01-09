@@ -5,6 +5,7 @@ import {
   EpsilonRule,
   TokenRef,
   Rule,
+  EOFTokenRef,
 } from '@peggier/token';
 
 export type TokenSetRules = { [key: string]: Record<string, number> };
@@ -42,13 +43,13 @@ const setMinus = <T>(set1: Set<T>, set2: Set<T>): Set<T> => {
 export class Grammar {
   private _firstSets?: TokenSetRules;
   private _followSets?: TokenSets;
-  public readonly start: TokenRef;
+  public readonly startRef: string;
   public readonly name: string;
   public readonly tokens: Token[];
 
   constructor(tokens: Token[], options?: Record<string, never>) {
-    this.tokens = tokens;
-    this.start = options?.start || this.nonterminalTokens[0].name;
+    this.tokens = tokens.concat();
+    this.startRef = options?.start || this.nonterminalTokens[0].name;
     this.name = options?.name || 'Grammar';
   }
 
@@ -72,11 +73,11 @@ export class Grammar {
   }
 
   public isTerminal(ref: TokenRef): boolean {
-    return this.terminalTokens.some((token) => token.name === ref);
+    return this.terminalTokens.some((token) => token.name === ref.ref) || ref instanceof EOFTokenRef;
   }
 
   private resolveRef(ref: TokenRef): Token {
-    return this.tokens.find((token) => token.name === ref);
+    return this.tokens.find((token) => token.name === ref.ref);
   }
 
   private first(rule: TokenRef[], firstSets: TokenSetRules): Set<string> {
@@ -88,15 +89,15 @@ export class Grammar {
     let hasNonEps = false;
     for (const ref of rule) {
       if (this.isTerminal(ref)) {
-        result.add(ref);
+        result.add(ref.ref);
         hasNonEps = true;
         break;
       } else {
-        const {EPS: _, ...first} = firstSets[ref];
+        const {EPS: _, ...first} = firstSets[ref.ref];
         for (const name of Object.keys(first)) {
           result.add(name);
         }
-        if (!("EPS" in firstSets[ref])) {
+        if (!("EPS" in firstSets[ref.ref])) {
           hasNonEps = true;
           break;
         }
@@ -146,7 +147,7 @@ export class Grammar {
     for (const token of this.nonterminalTokens) {
       followSets[token.name] = new Set();
     }
-    followSets[this.start].add('$');
+    followSets[this.startRef].add('$');
     let changed = true;
     while (changed) {
       changed = false;
@@ -159,12 +160,12 @@ export class Grammar {
             }
             const first  = this.first(rule.tokenRefs.slice(i + 1), this.firstSets)
             changed ||= setAddAllIsChanged(
-              followSets[ref],
+              followSets[ref.ref],
               [...setMinus(first, new Set(['EPS']))],
             );
             if (first.has('EPS')) {
               changed ||= setAddAllIsChanged(
-                followSets[ref],
+                followSets[ref.ref],
                 [...followSets[token.name]],
               );
             }

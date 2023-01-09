@@ -1,7 +1,5 @@
 import { Terminal } from "@peggier/terminal";
 
-export type TokenRef = string;
-
 export type TerminalTokenAction = "TAKE" | "SKIP";
 
 export class Token {
@@ -19,22 +17,33 @@ export class TerminalToken extends Token {
   }
 }
 
+export class BindedTokenRef {
+  ref: string;
+  label: string;
+  constructor(ref: string, label: string) {
+    this.ref = ref;
+    this.label = label;
+  }
+}
+
+export class EOFTokenRef {
+  ref = "EOF";
+}
+
+export type TokenRef = BindedTokenRef | EOFTokenRef;
+
 export class Rule {
   tokenRefs: TokenRef[];
-  constructor(tokenRefs: TokenRef[]) {
+  action?: string;
+  constructor(tokenRefs: TokenRef[], action?: string) {
     this.tokenRefs = tokenRefs;
+    this.action = action;
   }
 }
 
 export class EpsilonRule extends Rule {
-  constructor() {
-    super([]);
-  }
-}
-
-export class EOFRule extends Rule {
-  constructor() {
-    super(["EOF"]);
+  constructor(action?: string) {
+    super([], action);
   }
 }
 
