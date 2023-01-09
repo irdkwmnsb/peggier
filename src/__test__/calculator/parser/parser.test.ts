@@ -15,6 +15,12 @@ describe('Calculator parser tests', () => {
   test('Parser should parse operators', () => {
     expect(() => Parser.parse('1 + 2')).not.toThrow();
   });
+  test('Parser should parse unary minus', () => {
+    expect(() => Parser.parse('-1 - -2')).not.toThrow();
+  });
+  test('Parser should parse functions with no arguments', () => {
+    expect(() => Parser.parse('random()')).not.toThrow();
+  })
   test('Parser should parse functions', () => {
     expect(() => Parser.parse('sin(1)')).not.toThrow();
   });

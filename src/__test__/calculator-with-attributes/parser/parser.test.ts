@@ -21,8 +21,17 @@ describe('Calculator with attributes parser tests', () => {
     expect(Parser.parse('1 - 2')).toEqual(-1);
     expect(Parser.parse('1 * 2')).toEqual(2);
   });
+  test('Parser should parse unary minus', () => {
+    expect(Parser.parse('-1 - -2')).toEqual(-1 - -2);
+  });
+  test('Parser should parse functions with no arguments', () => {
+    const val = Parser.parse('random()');
+    expect(val).toBeGreaterThanOrEqual(0);
+    expect(val).toBeLessThanOrEqual(1);
+  })
   test('Parser should parse functions', () => {
     expect(Parser.parse('sin(1)')).toEqual(Math.sin(1));
+    expect(Parser.parse('sin(tan(1))')).toEqual(Math.sin(Math.tan(1)));
     expect(Parser.parse('sin(1) + cos(2)')).toEqual(Math.sin(1) + Math.cos(2));
   });
   test('Parser should parse function with multiple arguments', () => {
