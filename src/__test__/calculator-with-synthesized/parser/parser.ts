@@ -45,6 +45,15 @@ export class Parser {
     }
   }
 
+  private leaveOnly(obj: Record<string, any>, names: string[]): Record<string, any> {
+    const result: Record<string, any> = {};
+    for (const name of names) {
+      result[name] = obj[name];
+    }
+    return result;
+  }
+
+
   private readToken(type: string): string {
     this.expectOneOf([type]);
     const token = this.curToken[1];
@@ -276,4 +285,7 @@ export class Parser {
         return this["action$varargs$1"]();
     }
   }
+
+  // Arguments
+
 }

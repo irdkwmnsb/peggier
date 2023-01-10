@@ -4,7 +4,7 @@ import fs from "fs";
 
 export const readGrammar = async (): Promise<Grammar> => {
   const grammar = await fs.promises.readFile(
-    'src/__test__/calculator-with-attributes/calculator.peggier',
+    'src/__test__/calculator-with-inherited/calculator.peggier',
     { encoding: 'utf-8' },
   );
   return parse(grammar);

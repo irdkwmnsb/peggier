@@ -17,12 +17,24 @@ export class TerminalToken extends Token {
   }
 }
 
+export class CodeArgument {
+  constructor(public code: string) {};
+}
+
+export class RefArgument {
+  constructor(public ref: string) {};
+}
+
+export type Argument = CodeArgument | RefArgument;
+
 export class BindedTokenRef {
   ref: string;
-  label: string;
-  constructor(ref: string, label: string) {
+  label?: string;
+  args?: Argument[];
+  constructor(ref: string, label?: string, args?: Argument[]) {
     this.ref = ref;
     this.label = label;
+    this.args = args;
   }
 }
 
@@ -49,10 +61,12 @@ export class EpsilonRule extends Rule {
 
 export class NonterminalToken extends Token {
   rules: Rule[];
-  constructor(name: string, rules: Rule[]) {
+  args?: RefArgument[];
+  constructor(name: string, rules: Rule[], args?: RefArgument[]) {
     super();
     this.name = name;
     this.rules = rules;
+    this.args = args;
   }
 
   get hasEpsilonRule(): boolean {

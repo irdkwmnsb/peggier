@@ -1,15 +1,14 @@
-import fs from 'fs';
 import { generateLexerFile, generateParserFile } from '../generate';
 
-describe('Calculator with attributes parser tests', () => {
+describe('Calculator with inherited parser tests', () => {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let Parser: any = null;
   beforeAll(async () => {
     await generateLexerFile(
-      'src/__test__/calculator-with-attributes/parser/lexer.ts',
+      'src/__test__/calculator-with-inherited/parser/lexer.ts',
     );
     await generateParserFile(
-      'src/__test__/calculator-with-attributes/parser/parser.ts',
+      'src/__test__/calculator-with-inherited/parser/parser.ts',
     );
     Parser = (await require('./parser')).Parser;
   });

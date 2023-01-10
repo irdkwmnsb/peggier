@@ -1,7 +1,16 @@
 {{
 /* eslint-disable */
 import { StringTerminal, RegexpTerminal } from "@peggier/terminal";
-import { TerminalToken, Rule, EpsilonRule, NonterminalToken, BindedTokenRef, EOFTokenRef } from "@peggier/token";
+import {
+    TerminalToken,
+    Rule,
+    EpsilonRule,
+    NonterminalToken,
+    BindedTokenRef,
+    EOFTokenRef,
+    RefArgument,
+    CodeArgument
+} from "@peggier/token";
 import { Grammar } from "@peggier/grammar";
 }}
 peggier = options: header _ grammar: grammar { return new Grammar(grammar, options) }
@@ -21,8 +30,11 @@ grammar = @(rule*)
 rule = @(termRule / nontermRule) ";" _
 
 // nonterminals
-nontermRule = name: nontermName _ "=" _ rules: ruleExpr {
-    return new NonterminalToken(name, rules);
+nontermRule = name: nontermName _ args: tokenArguments? _ "=" _ rules: ruleExpr {
+    if(args && args.some((arg: any) => arg instanceof CodeArgument)) {
+        throw new Error("Code arguments are not allowed in arguments");
+    }
+    return new NonterminalToken(name, rules, args);
 }
 nontermName = [a-z][A-Za-z0-9_']* { return text(); }
 ruleExpr = first: ruleTerm _ rest: ("/" _ @ruleTerm _)* {
@@ -30,23 +42,33 @@ ruleExpr = first: ruleTerm _ rest: ("/" _ @ruleTerm _)* {
 }
 
 ruleTerm =
-"EPS" _ action: ruleAction? _ { return new EpsilonRule(action); }
-/
-terms: (label: (@propName _ ":")? _ termRef: (@termName / @nontermName) _ {
-    if(termRef === "EOF") {
-        return new EOFTokenRef();
-    }
-    return new BindedTokenRef(termRef, label)
-})+ _ action: ruleAction? {
+"EPS" _ action: action? _ { return new EpsilonRule(action); }
+/ terms: ruleTokenRef+ _ action: action? {
     return new Rule(terms, action);
 }
 
-ruleAction = "{" @code "}"
+ruleTokenRef = terms: (label: (@propName _ ":")? _ termRef: (
+    ref: termName { return { ref } } /
+    ref: nontermName args: tokenArguments? { return { ref, args } }
+    ) _ {
+    if (termRef.ref === "EOF") {
+        return new EOFTokenRef();
+    }
+    return new BindedTokenRef(termRef.ref, label, termRef.args);
+})
+
+action = "{" @code "}"
 code = codeText ("{" codeText code codeText "}" codeText code codeText)? { return text(); }
 codeText = [^{}]* { return text(); }
 
 propName = // Valid javascript identifier
     [a-zA-Z][a-zA-Z0-9_$]* { return text(); }
+
+tokenArguments = "(" _ @(first: argument rest: (_ "," _ @argument)* { return [first].concat(rest) }
+) _ ")"
+
+argument = ref: propName { return new RefArgument(ref) } /
+           code: action { return new CodeArgument(code) }
 
 // terminals
 termRule = name: termName _ "=" _ literal: termLiteral _ action: termAction?  {

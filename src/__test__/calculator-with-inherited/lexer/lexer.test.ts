@@ -1,12 +1,10 @@
-import { parse, generateLexer } from '@peggier/core';
-import fs from 'fs';
 import { generateLexerFile } from '../generate';
 
-describe('Calculator with attributes lexer tests', () => {
+describe('Calculator with inherited lexer tests', () => {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let lexer: any = null;
   beforeAll(async () => {
-    await generateLexerFile('src/__test__/calculator-with-attributes/lexer/lexer.ts');
+    await generateLexerFile('src/__test__/calculator-with-inherited/lexer/lexer.ts');
     const { Lexer } = await require('./lexer');
     lexer = new Lexer();
   });
