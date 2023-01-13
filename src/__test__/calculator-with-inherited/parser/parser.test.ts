@@ -19,6 +19,7 @@ describe('Calculator with inherited parser tests', () => {
     expect(Parser.parse('1 + 2')).toEqual(3);
     expect(Parser.parse('1 - 2')).toEqual(-1);
     expect(Parser.parse('1 * 2')).toEqual(2);
+    expect(Parser.parse('1 - 2 - 3')).toEqual(1 - 2 - 3);
   });
   test('Parser should parse unary minus', () => {
     expect(Parser.parse('-1 - -2')).toEqual(-1 - -2);
@@ -35,6 +36,13 @@ describe('Calculator with inherited parser tests', () => {
   });
   test('Parser should parse function with multiple arguments', () => {
     expect(Parser.parse('min(1, 3)')).toEqual(1);
+  });
+  test('Parser should parse factorial', () => {
+    expect(Parser.parse('4!')).toEqual(24);
+    expect(Parser.parse('4! + 3!')).toEqual(24 + 6)
+    expect(Parser.parse('min(2, 3)!')).toEqual(2);
+    expect(Parser.parse('3!!')).toEqual(720);
+    expect(Parser.parse('(5 + 2)!')).toEqual(5040);
   });
   test('Parser should parse hard cases', () => {
     expect(Parser.parse('( 2 + 3 ) - 5 * sin ( 3 * 7 )')).toEqual(

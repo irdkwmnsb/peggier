@@ -11,9 +11,11 @@ export class ParseError extends Error {
 // {
 //   expressionStart: { NUMBER: 0, MINUS: 0, LPAREN: 0, FUNCTION_NAME: 0 },
 //   expression: { NUMBER: 0, MINUS: 0, LPAREN: 0, FUNCTION_NAME: 0 },
+//   maybeFactorial: { FACT: 0, EPS: 1 },
 //   "expression'": { PLUS: 0, MINUS: 1, EPS: 2 },
 //   term: { NUMBER: 0, MINUS: 0, LPAREN: 0, FUNCTION_NAME: 0 },
 //   "term'": { MUL: 0, EPS: 1 },
+//   factorWithFactorial: { NUMBER: 0, MINUS: 0, LPAREN: 0, FUNCTION_NAME: 0 },
 //   factor: { NUMBER: 0, MINUS: 1, LPAREN: 2, FUNCTION_NAME: 3 },
 //   arguments: { EPS: 1, NUMBER: 0, MINUS: 0, LPAREN: 0, FUNCTION_NAME: 0 },
 //   varargs: { COMMA: 0, EPS: 1 }
@@ -72,6 +74,14 @@ export class Parser {
       return res;
   }
 
+  // Actions for maybeFactorial
+  private ["action$maybeFactorial$0"](others: any): any {
+      return 1 + others;
+  }
+  private ["action$maybeFactorial$1"](): any {
+      return 0;
+  }
+
   // Actions for expression'
   private ["action$expression'$0"](left: any, right: any, ans: any): any {
       return ans;
@@ -96,18 +106,33 @@ export class Parser {
       return left;
   }
 
+  // Actions for factorWithFactorial
+  private ["action$factorWithFactorial$0"](f: any, doFact: any): any {
+      const fact = (n: number): number => {
+        if (n === 1) {
+          return n;
+        }
+        return n * fact(n - 1);
+      }
+      let res = f;
+      for(let i = 0; i < doFact; i++) {
+        res = fact(res);
+      }
+      return res;
+  }
+
   // Actions for factor
   private ["action$factor$0"](num: any): any {
-     return parseInt(num);
+     return parseInt(num); 
   }
   private ["action$factor$1"](num: any): any {
-     return -num;
+     return -num; 
   }
   private ["action$factor$2"](expr: any): any {
-     return expr
+     return expr 
   }
   private ["action$factor$3"](f: any, args: any): any {
-     return (Math as any)[f].apply(null, args);
+     return (Math as any)[f].apply(null, args); 
   }
 
   // Actions for arguments
@@ -157,6 +182,21 @@ export class Parser {
     }
   }
 
+  private ["parse$maybeFactorial"](): any {
+    // No expectOneOf because of EPS
+    const parsedResults: Record<string, any> = {};
+    switch (this.curToken[0]) {
+      // Rule 0
+      case "FACT":
+        this.readToken("FACT");
+        parsedResults["others"] = this["parse$maybeFactorial"]();
+        return this["action$maybeFactorial$0"](parsedResults["others"]);
+      // Rule 1
+      default:
+        return this["action$maybeFactorial$1"]();
+    }
+  }
+
   private ["parse$expression'"](left: any): any {
     // No expectOneOf because of EPS
     const parsedResults: Record<string, any> = {};
@@ -188,7 +228,7 @@ export class Parser {
       case "MINUS":
       case "LPAREN":
       case "FUNCTION_NAME":
-        parsedResults["left"] = this["parse$factor"]();
+        parsedResults["left"] = this["parse$factorWithFactorial"]();
         parsedResults["res"] = this["parse$term'"](parsedResults["left"]);
         return this["action$term$0"](parsedResults["left"], parsedResults["res"]);
     }
@@ -201,12 +241,27 @@ export class Parser {
       // Rule 0
       case "MUL":
         this.readToken("MUL");
-        parsedResults["right"] = this["parse$factor"]();
+        parsedResults["right"] = this["parse$factorWithFactorial"]();
         parsedResults["res"] = this["parse$term'"](this["argument$term'$0$2$0"](left, parsedResults["right"]));
         return this["action$term'$0"](left, parsedResults["right"], parsedResults["res"]);
       // Rule 1
       default:
         return this["action$term'$1"](left);
+    }
+  }
+
+  private ["parse$factorWithFactorial"](): any {
+    this.expectOneOf(["NUMBER","MINUS","LPAREN","FUNCTION_NAME"]);
+    const parsedResults: Record<string, any> = {};
+    switch (this.curToken[0]) {
+      // Rule 0
+      case "NUMBER":
+      case "MINUS":
+      case "LPAREN":
+      case "FUNCTION_NAME":
+        parsedResults["f"] = this["parse$factor"]();
+        parsedResults["doFact"] = this["parse$maybeFactorial"]();
+        return this["action$factorWithFactorial$0"](parsedResults["f"], parsedResults["doFact"]);
     }
   }
 
@@ -276,16 +331,16 @@ export class Parser {
   // Arguments
   // Argument for expression', rule number 0, reference number 2, argument number 0
   private ["argument$expression'$0$2$0"](left: any, right: any): any {
-     return left + right;
+     return left + right; 
   }
 
   // Argument for expression', rule number 1, reference number 2, argument number 0
   private ["argument$expression'$1$2$0"](left: any, right: any): any {
-     return left - right;
+     return left - right; 
   }
 
   // Argument for term', rule number 0, reference number 2, argument number 0
   private ["argument$term'$0$2$0"](left: any, right: any): any {
-     return left * right;
+     return left * right; 
   }
 }

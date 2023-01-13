@@ -10,6 +10,7 @@ export class Lexer {
     ["MUL", "*", "TAKE"],
     ["PLUS", "+", "TAKE"],
     ["LPAREN", "(", "TAKE"],
+    ["FACT", "!", "TAKE"],
     ["RPAREN", ")", "TAKE"],
     ["WS", /\s+/, "SKIP"]
   ]

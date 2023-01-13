@@ -5,8 +5,14 @@ expressionStart = res:expression EOF {
   return res;
 };
 
-expression = left: term res: expression'(left) {
+expression = left:term res:expression'(left) {
   return res;
+};
+
+maybeFactorial = FACT others:maybeFactorial {
+  return 1 + others;
+} / EPS {
+  return 0;
 };
 
 expression'(left) =
@@ -20,16 +26,30 @@ MINUS right:term ans:expression'({ return left - right; }) {
 };
 
 term =
-left:factor res:term'(left) {
+left:factorWithFactorial res:term'(left) {
   return res;
 };
 
 term'(left) =
-MUL right:factor res:term'({ return left * right; }) {
+MUL right:factorWithFactorial res:term'({ return left * right; }) {
   return res;
 } /
 EPS {
   return left;
+};
+
+factorWithFactorial = f:factor doFact:maybeFactorial {
+  const fact = (n: number): number => {
+    if (n === 1) {
+      return n;
+    }
+    return n * fact(n - 1);
+  }
+  let res = f;
+  for(let i = 0; i < doFact; i++) {
+    res = fact(res);
+  }
+  return res;
 };
 
 factor = num: NUMBER { return parseInt(num); }
@@ -57,6 +77,7 @@ MINUS = "-";
 MUL = "*";
 PLUS = "+";
 LPAREN = "(";
+FACT = "!";
 RPAREN = ")";
 WS = /\s+/ {SKIP};
 
