@@ -18,8 +18,8 @@ jobs:
           node-version: ${{ matrix.node-version }}
           cache: 'pnpm'
       - run: pnpm install
-      - run: pnpm run lint --if-present
+      - run: pnpm run lint
       - run: pnpm test
-      - run: pnpm run build --if-present
+      - run: pnpm run build
         env:
           CI: true
